@@ -6,6 +6,8 @@ use App\Contracts\Repositories\BookRepository;
 use App\Exceptions\Api\ActionException;
 use App\Http\Requests\Api\Book\IndexRequest;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Http\Requests\Api\Book\BookingRequest;
+use App\Eloquent\Book;
 
 class BookController extends ApiController
 {
@@ -81,4 +83,15 @@ class BookController extends ApiController
 
       return $this->jsonRender();
     }
+
+    public function booking(BookingRequest $request, $id)
+    {
+        $data = $request->all();
+        return $this->doAction(function () use ($data, $id) {
+            $book = $this->repository->findOrfail($id);
+
+             $this->repository->booking($book, $data);
+        });
+    }
+
 }

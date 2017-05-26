@@ -9,6 +9,8 @@ class BookUser extends AbstractEloquent
     protected $fillable = [
         'type',
         'status',
+        'user_id',
+        'book_id'
     ];
 
     public function book()

@@ -4,6 +4,10 @@ namespace App\Repositories;
 
 use App\Contracts\Repositories\BookRepository;
 use App\Eloquent\Book;
+use App\Eloquent\BookUser;
+use App\Eloquent\User;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Auth;
 
 class BookRepositoryEloquent extends AbstractRepositoryEloquent implements BookRepository
 {
@@ -114,4 +118,37 @@ class BookRepositoryEloquent extends AbstractRepositoryEloquent implements BookR
                 return $this->getBooksByWaiting($with, $dataSelect);
         }
     }
+
+    public function booking(Book $book, array $attributes)
+    {
+        $bookUpdate = array_only($attributes['item'], app(BookUser::class)->getFillable());
+        $currentStatus = $book->users()->find($bookUpdate['user_id']);
+
+        if ($currentStatus->pivot->status == config('model.book_status.waiting')) {
+            $book->update(['status' => 'available']);
+            $book->userReadingBook()->updateExistingPivot($bookUpdate['user_id'], ['status' => config('model.book_status.done')]);
+
+        } else {
+            $userWaiting = $book->usersWaitingBook()
+                ->where('user_id', '<>', $bookUpdate['user_id'])
+                ->count();
+
+            if ($userWaiting) {
+                if (!$currentStatus) {
+                    $book->users()->attach($bookUpdate['user_id'], [
+                        'user_id' => $bookUpdate['user_id'],
+                        'book_id' => $bookUpdate['book_id'],
+                        'status' => config('model.book_status.waiting')
+                    ]);
+                } else {
+                    $book->users()->updateExistingPivot($bookUpdate['user_id'], ['status' => config('model.book_status.waiting')]);
+                }
+            } else {
+                $book->users()->updateExistingPivot($bookUpdate['user_id'], ['book_user.status' => config('model.book_status.reading')]);
+                $book->where('id', $bookUpdate['book_id'])->update(['status' => 'unavailable']);
+            }
+        }
+
+    }
+
 }

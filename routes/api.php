@@ -29,4 +29,5 @@ Route::group(['prefix' => 'v0', 'as' => 'api.v0.', 'namespace' => 'Api'], functi
 
     Route::resource('user', 'UserController');
     Route::resource('books', 'BookController');
+    Route::post('books/booking/{book_id}', ['as' => 'books.booking', 'uses' => 'BookController@booking']);
 });
